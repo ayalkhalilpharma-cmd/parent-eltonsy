@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>نظام تجميع وتقسيم مبيعات ومرتجعات شركات الآجل</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #1e3a8a;
+      --primary-light: #eff6ff;
+      --accent: #2563eb;
+      --text-main: #1f2937;
+      --border-color: #d1d5db;
+      --bg-canvas: #f3f4f6;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Cairo', system-ui, -apple-system, sans-serif;
+    }
+
+    /* Force Western Arabic Numerals (123...) */
+    body, table, td, th, div, span {
+      font-feature-settings: "tnum" 1, "lnum" 1;
+      font-variant-numeric: tabular-nums lining-nums;
+    }
+
+    body {
+      background-color: var(--bg-canvas);
+      color: var(--text-main);
+      padding: 24px;
+      line-height: 1.5;
+    }
+
+    .app-container {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .header-card {
+      background: #ffffff;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+      margin-bottom: 24px;
+      border: 1px solid #e5e7eb;
+    }
+
+    .header-title {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: var(--primary);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .controls-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .file-uploader {
+      position: relative;
+      border: 2px dashed #93c5fd;
+      background-color: var(--primary-light);
+      padding: 14px 20px;
+      border-radius: 8px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .file-uploader:hover {
+      border-color: var(--accent);
+      background-color: #dbeafe;
+    }
+
+    .file-uploader input[type="file"] {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .file-uploader-text {
+      font-weight: 700;
+      color: var(--accent);
+      font-size: 0.95rem;
+    }
+
+    .search-box {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      font-size: 0.95rem;
+      outline: none;
+    }
+
+    .search-box:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    }
+
+    .btn {
+      padding: 10px 20px;
+      font-weight: 700;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background 0.2s ease;
+      font-size: 0.95rem;
+    }
+
+    .btn-primary {
+      background-color: var(--accent);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background-color: #1d4ed8;
+    }
+
+    .meta-summary {
+      display: flex;
+      gap: 20px;
+      background: #ffffff;
+      padding: 16px 24px;
+      border-radius: 8px;
+      margin-bottom: 24px;
+      border: 1px solid #e5e7eb;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    .meta-item span {
+      color: var(--accent);
+      font-weight: 800;
+    }
+
+    /* Print Document Styles */
+    .company-block {
+      background: #ffffff;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 24px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+      page-break-inside: avoid; /* Prevents awkward splits in print */
+      break-inside: avoid;
+    }
+
+    .company-header {
+      border-bottom: 2px solid var(--primary);
+      padding-bottom: 8px;
+      margin-bottom: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .company-name {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--primary);
+    }
+
+    .company-meta {
+      font-size: 0.85rem;
+      color: #6b7280;
+    }
+
+    /* Table Styles matched to attached layout */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 12px;
+      direction: rtl;
+    }
+
+    .data-table th, 
+    .data-table td {
+      border: 1px solid #000000;
+      padding: 6px 10px;
+      text-align: center;
+      font-size: 0.9rem;
+      color: #000000;
+    }
+
+    .data-table th {
+      background-color: #f3f4f6;
+      font-weight: 800;
+    }
+
+    .data-table td.text-right {
+      text-align: right;
+    }
+
+    .data-table td.text-left {
+      text-align: left;
+    }
+
+    .summary-row td {
+      font-weight: 800;
+      background-color: #ffffff;
+      border: 2px solid #000000 !important;
+      border-radius: 6px;
+    }
+
+    .net-summary-box {
+      margin-top: 12px;
+      background-color: #f8fafc;
+      border: 2px solid #1e3a8a;
+      border-radius: 6px;
+      padding: 10px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 800;
+      font-size: 0.95rem;
+      color: var(--primary);
+    }
+
+    /* PRINT SPECIFIC STYLES FOR A4 */
+    @media print {
+      @page {
+        size: A4 portrait;
+        margin: 12mm 10mm;
+      }
+
+      body {
+        background: #ffffff !important;
+        padding: 0 !important;
+        color: #000000 !important;
+      }
+
+      .no-print {
+        display: none !important;
+      }
+
+      .app-container {
+        max-width: 100% !important;
+        margin: 0 !important;
+      }
+
+      .company-block {
+        box-shadow: none !important;
+        border: 1px solid #000000 !important;
+        margin-bottom: 16px !important;
+        padding: 12px !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+      }
+
+      .company-header {
+        border-bottom-color: #000000 !important;
+      }
+
+      .company-name {
+        color: #000000 !important;
+      }
+
+      .data-table th, 
+      .data-table td {
+        border-color: #000000 !important;
+        padding: 4px 6px !important;
+        font-size: 0.85rem !important;
+      }
+
+      .net-summary-box {
+        border-color: #000000 !important;
+        background: #ffffff !important;
+        color: #000000 !important;
+        padding: 6px 12px !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    <!-- Controls Section -->
+    <div class="header-card no-print">
+      <div class="header-title">
+        <span>📊 نظام كشوفات شركات الآجل - تجميع وتقسيم الطباعة</span>
+      </div>
+      <div class="controls-grid">
+        <div class="file-uploader">
+          <span class="file-uploader-text">📁 اضغط هنا لاختيار ملف HTM / HTML أو اسحبه هنا</span>
+          <input type="file" id="htmlFileInput" accept=".htm,.html">
+        </div>
+        <input type="text" id="searchInput" class="search-box" placeholder="بحث باسم الشركة...">
+        <button class="btn btn-primary" onclick="window.print()">
+          <span>🖨️ طباعة الكشوفات</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Info Banner -->
+    <div class="meta-summary no-print" id="metaSummary">
+      <div class="meta-item">إجمالي الشركات: <span id="totalCompaniesCount">0</span></div>
+      <div class="meta-item">إجمالي الفواتير: <span id="totalInvoicesCount">0</span></div>
+      <div class="meta-item">إجمالي المبيعات: <span id="totalSalesVal">0</span></div>
+      <div class="meta-item">إجمالي المرتجعات: <span id="totalReturnsVal">0</span></div>
+    </div>
+
+    <!-- Printable Content Container -->
+    <div id="companiesContainer"></div>
+  </div>
+
+  <script>
+    // Embedded sample HTML data from 14 nov.htm
+    const rawDemoHtml = `<TABLE BORDER=1 WIDTH=671>
+<TR><TD WIDTH=44><TD WIDTH=77><TD WIDTH=22><TD WIDTH=44><TD WIDTH=22><TD WIDTH=77><TD WIDTH=22><TD WIDTH=66><TD WIDTH=22><TD WIDTH=55><TD WIDTH=33><TD WIDTH=33><TD WIDTH=33><TD WIDTH=33><TD WIDTH=33><TD WIDTH=22><TD WIDTH=33></TR>
+<TR><TH ALIGN=left COLSPAN=4>الخليل فارما لتجارة الأدوية</TH><TD></TD><TD></TD><TD></TD><TD></TD><TH COLSPAN=5 ROWSPAN=2>بيان بالفواتير المفتوحة مع العمـــلاء </TH><TD></TD><TD></TD><TD></TD><TD></TD></TR>
+<TR><TD></TD><TD></TD><TD></TD><TD></TD><TD></TD><TD></TD><TD></TD><TD></TD><TD></TD><TD></TD><TD></TD><TD></TD></TR>
+<TR><TH ALIGN=left COLSPAN=4></TH><TD></TD><TD></TD><TD></TD><TH ALIGN=right>2026/11/14</TH><TH ALIGN=left COLSPAN=2>: خلال الفترة من </TH><TH ALIGN=right COLSPAN=4>All Branches </TH><TH ALIGN=left>فــرع </TH><TD></TD><TD></TD></TR>
+<TR><TH ALIGN=left COLSPAN=4></TH><TD></TD><TD></TD><TD></TD><TD></TD><TD></TD><TD></TD><TD></TD><TD></TD><TD></TD><TD></TD><TD></TD><TD></TD><TD></TD></TR>
+<TR><TD></TD><TD></TD><TD></TD><TD></TD><TD></TD><TD></TD><TD></TD><TH ALIGN=right>2026/11/14</TH><TH ALIGN=left>: إلى</TH><TD></TD><TH ALIGN=right COLSPAN=4></TH><TH ALIGN=left COLSPAN=2>Parent</TH><TD></TD></TR>
+<TR><TD></TD><TD></TD><TD></TD><TD></TD><TD></TD><TD></TD><TD></TD><TD></TD><TD></TD><TD></TD><TD></TD><TD></TD><TD></TD><TD></TD><TD></TD><TD></TD><TD></TD></TR>
+<TR><TD></TD><TH>المتبقـــى من الفــاتورة</TH><TH COLSPAN=3>المسدد من الفاتورة</TH><TH>قيمة الفاتورة</TH><TH COLSPAN=4>جهــة التعامــــــل </TH><TH COLSPAN=2>رقم الفاتورة</TH><TH COLSPAN=2>تاريخ الفاتورة</TH><TH COLSPAN=3>نــوع الفاتورة</TH></TR>
+<TR><TD></TD><TD ALIGN=right>334.00</TD><TD ALIGN=right COLSPAN=3>0.00</TD><TD ALIGN=right>334.00</TD><TD ALIGN=right COLSPAN=4>عز الدخليه</TD><TD ALIGN=center COLSPAN=2>803993</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>950.41</TD><TD ALIGN=right COLSPAN=3>105.60</TD><TD ALIGN=right>1,056.01</TD><TD ALIGN=right COLSPAN=4>NEXTCARE 10%</TD><TD ALIGN=center COLSPAN=2>804002</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>104.40</TD><TD ALIGN=right COLSPAN=3>69.60</TD><TD ALIGN=right>174.00</TD><TD ALIGN=right COLSPAN=4>MED-RIGHT 40%</TD><TD ALIGN=center COLSPAN=2>804005</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>610.81</TD><TD ALIGN=right COLSPAN=3>67.87</TD><TD ALIGN=right>678.68</TD><TD ALIGN=right COLSPAN=4>NEXTCARE 10%</TD><TD ALIGN=center COLSPAN=2>804006</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>284.80</TD><TD ALIGN=right COLSPAN=3>71.20</TD><TD ALIGN=right>356.00</TD><TD ALIGN=right COLSPAN=4>D.M.S. 20%</TD><TD ALIGN=center COLSPAN=2>804010</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>4,303.50</TD><TD ALIGN=right COLSPAN=3>0.00</TD><TD ALIGN=right>4,303.50</TD><TD ALIGN=right COLSPAN=4>AXA 100%</TD><TD ALIGN=center COLSPAN=2>804013</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>281.28</TD><TD ALIGN=right COLSPAN=3>0.00</TD><TD ALIGN=right>281.28</TD><TD ALIGN=right COLSPAN=4>GLOBEMED 100%</TD><TD ALIGN=center COLSPAN=2>804014</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>591.35</TD><TD ALIGN=right COLSPAN=3>65.71</TD><TD ALIGN=right>657.06</TD><TD ALIGN=right COLSPAN=4>NEXTCARE 10%</TD><TD ALIGN=center COLSPAN=2>804015</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>2,181.91</TD><TD ALIGN=right COLSPAN=3>242.43</TD><TD ALIGN=right>2,424.34</TD><TD ALIGN=right COLSPAN=4>NEXTCARE 10%</TD><TD ALIGN=center COLSPAN=2>804016</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>913.05</TD><TD ALIGN=right COLSPAN=3>101.45</TD><TD ALIGN=right>1,014.50</TD><TD ALIGN=right COLSPAN=4>NEXTCARE 10%</TD><TD ALIGN=center COLSPAN=2>804017</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>2,183.53</TD><TD ALIGN=right COLSPAN=3>242.61</TD><TD ALIGN=right>2,426.14</TD><TD ALIGN=right COLSPAN=4>NEXTCARE 10%</TD><TD ALIGN=center COLSPAN=2>804018</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>239.14</TD><TD ALIGN=right COLSPAN=3>59.78</TD><TD ALIGN=right>298.92</TD><TD ALIGN=right COLSPAN=4>NEXTCARE 20%</TD><TD ALIGN=center COLSPAN=2>804019</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>198.00</TD><TD ALIGN=right COLSPAN=3>66.00</TD><TD ALIGN=right>264.00</TD><TD ALIGN=right COLSPAN=4>GLOBEMED 25%</TD><TD ALIGN=center COLSPAN=2>804022</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>34.50</TD><TD ALIGN=right COLSPAN=3>34.50</TD><TD ALIGN=right>69.00</TD><TD ALIGN=right COLSPAN=4>Instashop cash 50% offers</TD><TD ALIGN=center COLSPAN=2>804024</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>228.00</TD><TD ALIGN=right COLSPAN=3>0.00</TD><TD ALIGN=right>228.00</TD><TD ALIGN=right COLSPAN=4>عز الدخليه</TD><TD ALIGN=center COLSPAN=2>804025</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>208.80</TD><TD ALIGN=right COLSPAN=3>0.00</TD><TD ALIGN=right>208.80</TD><TD ALIGN=right COLSPAN=4>بترول الصحراء الغربية(ويبكو)..(أسر)</TD><TD ALIGN=center COLSPAN=2>804027</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>170.10</TD><TD ALIGN=right COLSPAN=3>0.00</TD><TD ALIGN=right>170.10</TD><TD ALIGN=right COLSPAN=4>بترول الصحراء الغربية(ويبكو)..(أسر)</TD><TD ALIGN=center COLSPAN=2>804028</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>210.00</TD><TD ALIGN=right COLSPAN=3>210.00</TD><TD ALIGN=right>420.00</TD><TD ALIGN=right COLSPAN=4>Instashop cash 50% offers</TD><TD ALIGN=center COLSPAN=2>804030</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>533.17</TD><TD ALIGN=right COLSPAN=3>133.29</TD><TD ALIGN=right>666.46</TD><TD ALIGN=right COLSPAN=4>NEXTCARE 20%</TD><TD ALIGN=center COLSPAN=2>804033</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>370.39</TD><TD ALIGN=right COLSPAN=3>41.15</TD><TD ALIGN=right>411.54</TD><TD ALIGN=right COLSPAN=4>GLOBEMED 10%</TD><TD ALIGN=center COLSPAN=2>804035</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>500.00</TD><TD ALIGN=right COLSPAN=3>22.00</TD><TD ALIGN=right>522.00</TD><TD ALIGN=right COLSPAN=4>كاريتاس 100% حد اقصى 500جنيه</TD><TD ALIGN=center COLSPAN=2>804036</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>1,000.00</TD><TD ALIGN=right COLSPAN=3>68.00</TD><TD ALIGN=right>1,068.00</TD><TD ALIGN=right COLSPAN=4>كاريتاس 100%  اتحاد اوروبى حد اقصى 1000جنيه</TD><TD ALIGN=center COLSPAN=2>804037</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>453.00</TD><TD ALIGN=right COLSPAN=3>0.00</TD><TD ALIGN=right>453.00</TD><TD ALIGN=right COLSPAN=4>كاريتاس 100% حد اقصى 500جنيه</TD><TD ALIGN=center COLSPAN=2>804038</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>1,110.28</TD><TD ALIGN=right COLSPAN=3>277.57</TD><TD ALIGN=right>1,387.85</TD><TD ALIGN=right COLSPAN=4>NEXTCARE 20%</TD><TD ALIGN=center COLSPAN=2>804045</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>505.60</TD><TD ALIGN=right COLSPAN=3>0.00</TD><TD ALIGN=right>505.60</TD><TD ALIGN=right COLSPAN=4>الاهلى للمشروعات  100%</TD><TD ALIGN=center COLSPAN=2>804046</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>187.50</TD><TD ALIGN=right COLSPAN=3>62.50</TD><TD ALIGN=right>250.00</TD><TD ALIGN=right COLSPAN=4>ابوقير للاسمدة ( 25%)</TD><TD ALIGN=center COLSPAN=2>804056</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>216.60</TD><TD ALIGN=right COLSPAN=3>54.15</TD><TD ALIGN=right>270.75</TD><TD ALIGN=right COLSPAN=4>AXA 20%</TD><TD ALIGN=center COLSPAN=2>804057</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>654.00</TD><TD ALIGN=right COLSPAN=3>0.00</TD><TD ALIGN=right>654.00</TD><TD ALIGN=right COLSPAN=4>Instashop بدون تحمل</TD><TD ALIGN=center COLSPAN=2>804058</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>167.20</TD><TD ALIGN=right COLSPAN=3>41.80</TD><TD ALIGN=right>209.00</TD><TD ALIGN=right COLSPAN=4>AXA 20%</TD><TD ALIGN=center COLSPAN=2>804061</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>1,683.50</TD><TD ALIGN=right COLSPAN=3>420.87</TD><TD ALIGN=right>2,104.37</TD><TD ALIGN=right COLSPAN=4>ALICO 20%(تحمل موافقات)</TD><TD ALIGN=center COLSPAN=2>804062</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>384.77</TD><TD ALIGN=right COLSPAN=3>96.19</TD><TD ALIGN=right>480.96</TD><TD ALIGN=right COLSPAN=4>GLOBEMED 20%</TD><TD ALIGN=center COLSPAN=2>804066</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>2,252.07</TD><TD ALIGN=right COLSPAN=3>397.42</TD><TD ALIGN=right>2,649.49</TD><TD ALIGN=right COLSPAN=4>ALICO 15%</TD><TD ALIGN=center COLSPAN=2>804071</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>2,056.39</TD><TD ALIGN=right COLSPAN=3>362.89</TD><TD ALIGN=right>2,419.28</TD><TD ALIGN=right COLSPAN=4>NEXTCARE 15%</TD><TD ALIGN=center COLSPAN=2>804072</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>1,182.78</TD><TD ALIGN=right COLSPAN=3>295.69</TD><TD ALIGN=right>1,478.47</TD><TD ALIGN=right COLSPAN=4>AXA 20%</TD><TD ALIGN=center COLSPAN=2>804076</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>334.85</TD><TD ALIGN=right COLSPAN=3>83.71</TD><TD ALIGN=right>418.56</TD><TD ALIGN=right COLSPAN=4>GLOBEMED 20%</TD><TD ALIGN=center COLSPAN=2>804077</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>348.00</TD><TD ALIGN=right COLSPAN=3>0.00</TD><TD ALIGN=right>348.00</TD><TD ALIGN=right COLSPAN=4>كاريتاس 100%  اتحاد اوروبى حد اقصى 500جنيه</TD><TD ALIGN=center COLSPAN=2>804082</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>321.00</TD><TD ALIGN=right COLSPAN=3>0.00</TD><TD ALIGN=right>321.00</TD><TD ALIGN=right COLSPAN=4>كاريتاس 100%</TD><TD ALIGN=center COLSPAN=2>804085</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>482.60</TD><TD ALIGN=right COLSPAN=3>120.65</TD><TD ALIGN=right>603.25</TD><TD ALIGN=right COLSPAN=4>ALICO 20%</TD><TD ALIGN=center COLSPAN=2>804089</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>137.50</TD><TD ALIGN=right COLSPAN=3>137.50</TD><TD ALIGN=right>275.00</TD><TD ALIGN=right COLSPAN=4>تكنوفارما - عناية</TD><TD ALIGN=center COLSPAN=2>804091</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>211.50</TD><TD ALIGN=right COLSPAN=3>70.50</TD><TD ALIGN=right>282.00</TD><TD ALIGN=right COLSPAN=4>عناية مصر 25%</TD><TD ALIGN=center COLSPAN=2>804094</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>63.74</TD><TD ALIGN=right COLSPAN=3>15.94</TD><TD ALIGN=right>79.68</TD><TD ALIGN=right COLSPAN=4>GLOBEMED 20%</TD><TD ALIGN=center COLSPAN=2>804096</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>289.54</TD><TD ALIGN=right COLSPAN=3>72.38</TD><TD ALIGN=right>361.92</TD><TD ALIGN=right COLSPAN=4>GLOBEMED 20%</TD><TD ALIGN=center COLSPAN=2>804097</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>122.88</TD><TD ALIGN=right COLSPAN=3>30.72</TD><TD ALIGN=right>153.60</TD><TD ALIGN=right COLSPAN=4>GLOBEMED 20%</TD><TD ALIGN=center COLSPAN=2>804100</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>282.15</TD><TD ALIGN=right COLSPAN=3>31.35</TD><TD ALIGN=right>313.50</TD><TD ALIGN=right COLSPAN=4>AXA 10%</TD><TD ALIGN=center COLSPAN=2>804102</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>1,650.43</TD><TD ALIGN=right COLSPAN=3>412.61</TD><TD ALIGN=right>2,063.04</TD><TD ALIGN=right COLSPAN=4>GLOBEMED 20%</TD><TD ALIGN=center COLSPAN=2>804105</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>2,954.44</TD><TD ALIGN=right COLSPAN=3>0.00</TD><TD ALIGN=right>2,954.44</TD><TD ALIGN=right COLSPAN=4>GLOBEMED 100%</TD><TD ALIGN=center COLSPAN=2>804106</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>163.15</TD><TD ALIGN=right COLSPAN=3>40.79</TD><TD ALIGN=right>203.94</TD><TD ALIGN=right COLSPAN=4>GLOBEMED 20%</TD><TD ALIGN=center COLSPAN=2>804107</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>2,699.59</TD><TD ALIGN=right COLSPAN=3>299.95</TD><TD ALIGN=right>2,999.54</TD><TD ALIGN=right COLSPAN=4>NEXTCARE 10%</TD><TD ALIGN=center COLSPAN=2>804108</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>213.50</TD><TD ALIGN=right COLSPAN=3>53.38</TD><TD ALIGN=right>266.88</TD><TD ALIGN=right COLSPAN=4>GLOBEMED 20%</TD><TD ALIGN=center COLSPAN=2>804111</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>500.00</TD><TD ALIGN=right COLSPAN=3>46.00</TD><TD ALIGN=right>546.00</TD><TD ALIGN=right COLSPAN=4>كاريتاس 100%  اتحاد اوروبى حد اقصى 500جنيه</TD><TD ALIGN=center COLSPAN=2>804122</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>931.58</TD><TD ALIGN=right COLSPAN=3>232.90</TD><TD ALIGN=right>1,164.48</TD><TD ALIGN=right COLSPAN=4>GLOBEMED 20%</TD><TD ALIGN=center COLSPAN=2>804125</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>142.85</TD><TD ALIGN=right COLSPAN=3>35.71</TD><TD ALIGN=right>178.56</TD><TD ALIGN=right COLSPAN=4>GLOBEMED 20%</TD><TD ALIGN=center COLSPAN=2>804126</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>1,544.45</TD><TD ALIGN=right COLSPAN=3>386.11</TD><TD ALIGN=right>1,930.56</TD><TD ALIGN=right COLSPAN=4>GLOBEMED 20%</TD><TD ALIGN=center COLSPAN=2>804127</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>1,007.37</TD><TD ALIGN=right COLSPAN=3>251.84</TD><TD ALIGN=right>1,259.21</TD><TD ALIGN=right COLSPAN=4>GLOBEMED 20%</TD><TD ALIGN=center COLSPAN=2>804129</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>1,117.80</TD><TD ALIGN=right COLSPAN=3>124.20</TD><TD ALIGN=right>1,242.00</TD><TD ALIGN=right COLSPAN=4>MED-RIGHT 10%</TD><TD ALIGN=center COLSPAN=2>804131</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>788.40</TD><TD ALIGN=right COLSPAN=3>87.60</TD><TD ALIGN=right>876.00</TD><TD ALIGN=right COLSPAN=4>MED-RIGHT 10%</TD><TD ALIGN=center COLSPAN=2>804132</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>88.32</TD><TD ALIGN=right COLSPAN=3>22.08</TD><TD ALIGN=right>110.40</TD><TD ALIGN=right COLSPAN=4>GLOBEMED 20%</TD><TD ALIGN=center COLSPAN=2>804136</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>249.98</TD><TD ALIGN=right COLSPAN=3>107.14</TD><TD ALIGN=right>357.12</TD><TD ALIGN=right COLSPAN=4>GLOBEMED 30%</TD><TD ALIGN=center COLSPAN=2>804139</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>345.17</TD><TD ALIGN=right COLSPAN=3>86.29</TD><TD ALIGN=right>431.46</TD><TD ALIGN=right COLSPAN=4>NEXTCARE 20%</TD><TD ALIGN=center COLSPAN=2>804140</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>595.00</TD><TD ALIGN=right COLSPAN=3>0.00</TD><TD ALIGN=right>595.00</TD><TD ALIGN=right COLSPAN=4>Instashop بدون تحمل</TD><TD ALIGN=center COLSPAN=2>804141</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>372.60</TD><TD ALIGN=right COLSPAN=3>248.40</TD><TD ALIGN=right>621.00</TD><TD ALIGN=right COLSPAN=4>MED-RIGHT 40% موافقات</TD><TD ALIGN=center COLSPAN=2>804145</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>314.10</TD><TD ALIGN=right COLSPAN=3>34.90</TD><TD ALIGN=right>349.00</TD><TD ALIGN=right COLSPAN=4>MED-RIGHT 10%</TD><TD ALIGN=center COLSPAN=2>804146</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>213.85</TD><TD ALIGN=right COLSPAN=3>23.76</TD><TD ALIGN=right>237.61</TD><TD ALIGN=right COLSPAN=4>NEXTCARE 10%</TD><TD ALIGN=center COLSPAN=2>804147</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>759.89</TD><TD ALIGN=right COLSPAN=3>189.97</TD><TD ALIGN=right>949.86</TD><TD ALIGN=right COLSPAN=4>NEXTCARE 20%</TD><TD ALIGN=center COLSPAN=2>804156</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>132.63</TD><TD ALIGN=right COLSPAN=3>33.16</TD><TD ALIGN=right>165.79</TD><TD ALIGN=right COLSPAN=4>NEXTCARE 20%</TD><TD ALIGN=center COLSPAN=2>804157</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>187.39</TD><TD ALIGN=right COLSPAN=3>46.85</TD><TD ALIGN=right>234.24</TD><TD ALIGN=right COLSPAN=4>GLOBEMED 20%</TD><TD ALIGN=center COLSPAN=2>804161</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>260.35</TD><TD ALIGN=right COLSPAN=3>65.09</TD><TD ALIGN=right>325.44</TD><TD ALIGN=right COLSPAN=4>GLOBEMED 20%</TD><TD ALIGN=center COLSPAN=2>804165</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>389.38</TD><TD ALIGN=right COLSPAN=3>97.34</TD><TD ALIGN=right>486.72</TD><TD ALIGN=right COLSPAN=4>GLOBEMED 20%</TD><TD ALIGN=center COLSPAN=2>804169</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>377.86</TD><TD ALIGN=right COLSPAN=3>94.46</TD><TD ALIGN=right>472.32</TD><TD ALIGN=right COLSPAN=4>GLOBEMED 20%</TD><TD ALIGN=center COLSPAN=2>804171</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>557.00</TD><TD ALIGN=right COLSPAN=3>0.00</TD><TD ALIGN=right>557.00</TD><TD ALIGN=right COLSPAN=4>ANRPC (حد أقصى)</TD><TD ALIGN=center COLSPAN=2>804173</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>1,495.00</TD><TD ALIGN=right COLSPAN=3>0.00</TD><TD ALIGN=right>1,495.00</TD><TD ALIGN=right COLSPAN=4>MED-RIGHT 100% موافقات</TD><TD ALIGN=center COLSPAN=2>804181</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مبيعات لعميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>610.81</TD><TD ALIGN=right COLSPAN=3>67.87</TD><TD ALIGN=right>678.68</TD><TD ALIGN=right COLSPAN=4>NEXTCARE 10%</TD><TD ALIGN=center COLSPAN=2>82296</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مرتجع من عميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>500.00</TD><TD ALIGN=right COLSPAN=3>22.00</TD><TD ALIGN=right>522.00</TD><TD ALIGN=right COLSPAN=4>كاريتاس 100% حد اقصى 500جنيه</TD><TD ALIGN=center COLSPAN=2>82297</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مرتجع من عميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>2,056.39</TD><TD ALIGN=right COLSPAN=3>362.89</TD><TD ALIGN=right>2,419.28</TD><TD ALIGN=right COLSPAN=4>NEXTCARE 15%</TD><TD ALIGN=center COLSPAN=2>82302</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مرتجع من عميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>2,252.07</TD><TD ALIGN=right COLSPAN=3>397.42</TD><TD ALIGN=right>2,649.49</TD><TD ALIGN=right COLSPAN=4>ALICO 15%</TD><TD ALIGN=center COLSPAN=2>82303</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مرتجع من عميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>384.77</TD><TD ALIGN=right COLSPAN=3>96.19</TD><TD ALIGN=right>480.96</TD><TD ALIGN=right COLSPAN=4>GLOBEMED 20%</TD><TD ALIGN=center COLSPAN=2>82305</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مرتجع من عميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>348.00</TD><TD ALIGN=right COLSPAN=3>0.00</TD><TD ALIGN=right>348.00</TD><TD ALIGN=right COLSPAN=4>كاريتاس 100%  اتحاد اوروبى حد اقصى 500جنيه</TD><TD ALIGN=center COLSPAN=2>82306</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مرتجع من عميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>2,183.53</TD><TD ALIGN=right COLSPAN=3>242.61</TD><TD ALIGN=right>2,426.14</TD><TD ALIGN=right COLSPAN=4>NEXTCARE 10%</TD><TD ALIGN=center COLSPAN=2>82307</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مرتجع من عميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>931.58</TD><TD ALIGN=right COLSPAN=3>232.90</TD><TD ALIGN=right>1,164.48</TD><TD ALIGN=right COLSPAN=4>GLOBEMED 20%</TD><TD ALIGN=center COLSPAN=2>82310</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مرتجع من عميل</TD></TR>
+<TR><TD></TD><TD ALIGN=right>260.35</TD><TD ALIGN=right COLSPAN=3>65.09</TD><TD ALIGN=right>325.44</TD><TD ALIGN=right COLSPAN=4>GLOBEMED 20%</TD><TD ALIGN=center COLSPAN=2>82311</TD><TD ALIGN=center COLSPAN=2>2026/11/14</TD><TD ALIGN=right COLSPAN=3>مرتجع من عميل</TD></TR>
+</TABLE>`;
+
+    let allGroupedData = {};
+
+    // Helper: Normalize company names to group variations under master company name
+    function getMasterCompanyName(rawName) {
+      if (!rawName) return 'غير محدد';
+      const clean = rawName.trim();
+      const upper = clean.toUpperCase();
+
+      if (upper.includes('ALICO')) return 'ALICO';
+      if (upper.includes('NEXTCARE')) return 'NEXTCARE';
+      if (upper.includes('GLOBEMED')) return 'GLOBEMED';
+      if (upper.includes('MED-RIGHT')) return 'MED-RIGHT';
+      if (upper.includes('AXA')) return 'AXA';
+      if (upper.includes('D.M.S.')) return 'D.M.S.';
+      if (clean.includes('كاريتاس')) return 'كاريتاس';
+      if (upper.includes('INSTASHOP')) return 'Instashop';
+      if (clean.includes('عز الدخليه')) return 'عز الدخليه';
+      if (clean.includes('بترول الصحراء الغربية') || clean.includes('ويبكو')) return 'بترول الصحراء الغربية (ويبكو)';
+      
+      // Default: Return the base text before first numeric percentage if any
+      return clean.split(/\s+\d+%/)[0].trim();
+    }
+
+    // Helper: Parse currency string to float
+    function parseNum(str) {
+      if (!str) return 0;
+      const clean = str.replace(/,/g, '').trim();
+      const val = parseFloat(clean);
+      return isNaN(val) ? 0 : val;
+    }
+
+    // Helper: Format number with Western Arabic numerals (1,234.56)
+    function fmtNum(num) {
+      return num.toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    }
+
+    // Main HTML Parser Engine
+    function parseSalesHtml(htmlContent) {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlContent, 'text/html');
+      const rows = Array.from(doc.querySelectorAll('tr'));
+
+      const companyMap = {};
+      let totalSales = 0;
+      let totalReturns = 0;
+      let totalInvCount = 0;
+
+      rows.forEach(tr => {
+        const tds = Array.from(tr.children);
+        if (tds.length < 6) return;
+
+        // Check if row has valid invoice date/number signature
+        const typeText = tr.innerText || '';
+        const isSale = typeText.includes('مبيعات لعميل');
+        const isReturn = typeText.includes('مرتجع من عميل');
+
+        if (!isSale && !isReturn) return;
+
+        // Extract cells standard SofTech format
+        let rawEntity = '', invNo = '', invDate = '', typeStr = '';
+        let totalVal = 0, paidVal = 0, remainVal = 0;
+
+        // Standard 7-8 visible cell structure
+        const cellTexts = tds.map(td => td.innerText.trim()).filter(t => t.length > 0);
+        
+        // Match columns safely from right to left
+        remainVal = parseNum(cellTexts[0]);
+        paidVal = parseNum(cellTexts[1]);
+        totalVal = parseNum(cellTexts[2]);
+        rawEntity = cellTexts[3] || '';
+        invNo = cellTexts[4] || '';
+        invDate = cellTexts[5] || '';
+        typeStr = isSale ? 'مبيعات لعميل' : 'مرتجع من عميل';
+
+        if (!rawEntity) return;
+
+        const masterName = getMasterCompanyName(rawEntity);
+
+        if (!companyMap[masterName]) {
+          companyMap[masterName] = {
+            sales: [],
+            returns: [],
+            totalSalesVal: 0,
+            totalSalesPaid: 0,
+            totalSalesRemain: 0,
+            totalReturnVal: 0,
+            totalReturnPaid: 0,
+            totalReturnRemain: 0
+          };
+        }
+
+        const item = {
+          type: typeStr,
+          date: invDate,
+          no: invNo,
+          entity: rawEntity,
+          total: totalVal,
+          paid: paidVal,
+          remain: remainVal
+        };
+
+        totalInvCount++;
+        if (isSale) {
+          companyMap[masterName].sales.push(item);
+          companyMap[masterName].totalSalesVal += totalVal;
+          companyMap[masterName].totalSalesPaid += paidVal;
+          companyMap[masterName].totalSalesRemain += remainVal;
+          totalSales += totalVal;
+        } else {
+          companyMap[masterName].returns.push(item);
+          companyMap[masterName].totalReturnVal += totalVal;
+          companyMap[masterName].totalReturnPaid += paidVal;
+          companyMap[masterName].totalReturnRemain += remainVal;
+          totalReturns += totalVal;
+        }
+      });
+
+      return { companyMap, totalSales, totalReturns, totalInvCount };
+    }
+
+    // Render UI & Print Layout
+    function renderApp(parsedData, filterQuery = '') {
+      const container = document.getElementById('companiesContainer');
+      container.innerHTML = '';
+
+      const { companyMap, totalSales, totalReturns, totalInvCount } = parsedData;
+      const keys = Object.keys(companyMap).sort();
+
+      let visibleCompaniesCount = 0;
+
+      // Update Top Global Meta
+      document.getElementById('totalCompaniesCount').innerText = keys.length;
+      document.getElementById('totalInvoicesCount').innerText = totalInvCount;
+      document.getElementById('totalSalesVal').innerText = fmtNum(totalSales);
+      document.getElementById('totalReturnsVal').innerText = fmtNum(totalReturns);
+
+      keys.forEach(compName => {
+        if (filterQuery && !compName.toLowerCase().includes(filterQuery.toLowerCase())) {
+          return;
+        }
+
+        visibleCompaniesCount++;
+        const comp = companyMap[compName];
+        const netVal = comp.totalSalesVal - comp.totalReturnVal;
+        const netRemain = comp.totalSalesRemain - comp.totalReturnRemain;
+
+        const compBlock = document.createElement('div');
+        compBlock.className = 'company-block';
+
+        let html = `
+          <div class="company-header">
+            <div class="company-name">${compName}</div>
+            <div class="company-meta">مبيعات: ${comp.sales.length} | مرتجعات: ${comp.returns.length}</div>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width: 15%;">نوع الفاتوره</th>
+                <th style="width: 15%;">تاريخ الفاتوره</th>
+                <th style="width: 12%;">رقم الفاتوره</th>
+                <th style="width: 28%;">جهة التعامــــــل</th>
+                <th style="width: 10%;">قيمه الفاتوره</th>
+                <th style="width: 10%;">المسدد من الفاتوره</th>
+                <th style="width: 10%;">المتبقى من الفــاتورة</th>
+              </tr>
+            </thead>
+            <tbody>
+        `;
+
+        // Render Sales Rows
+        comp.sales.forEach(row => {
+          html += `
+            <tr>
+              <td>${row.type}</td>
+              <td>${row.date}</td>
+              <td>${row.no}</td>
+              <td class="text-right">${row.entity}</td>
+              <td class="text-left">${fmtNum(row.total)}</td>
+              <td class="text-left">${fmtNum(row.paid)}</td>
+              <td class="text-left">${fmtNum(row.remain)}</td>
+            </tr>
+          `;
+        });
+
+        // Sales Summary Row
+        if (comp.sales.length > 0) {
+          html += `
+            <tr class="summary-row">
+              <td colspan="4" class="text-center">إجــــــمالي مبيعات لعميل</td>
+              <td class="text-left">${fmtNum(comp.totalSalesVal)}</td>
+              <td class="text-left">${fmtNum(comp.totalSalesPaid)}</td>
+              <td class="text-left">${fmtNum(comp.totalSalesRemain)}</td>
+            </tr>
+          `;
+        }
+
+        // Render Return Rows
+        comp.returns.forEach(row => {
+          html += `
+            <tr>
+              <td>${row.type}</td>
+              <td>${row.date}</td>
+              <td>${row.no}</td>
+              <td class="text-right">${row.entity}</td>
+              <td class="text-left">${fmtNum(row.total)}</td>
+              <td class="text-left">${fmtNum(row.paid)}</td>
+              <td class="text-left">${fmtNum(row.remain)}</td>
+            </tr>
+          `;
+        });
+
+        // Return Summary Row
+        if (comp.returns.length > 0) {
+          html += `
+            <tr class="summary-row">
+              <td colspan="4" class="text-center">إجــــــمالي مرتجع من عميل</td>
+              <td class="text-left">${fmtNum(comp.totalReturnVal)}</td>
+              <td class="text-left">${fmtNum(comp.totalReturnPaid)}</td>
+              <td class="text-left">${fmtNum(comp.totalReturnRemain)}</td>
+            </tr>
+          `;
+        }
+
+        html += `
+            </tbody>
+          </table>
+          <div class="net-summary-box">
+            <span>صافي قيمة التعامل (المبيعات - المرتجعات): ${fmtNum(netVal)}</span>
+            <span>صافي المتبقي للشركة: ${fmtNum(netRemain)}</span>
+          </div>
+        `;
+
+        compBlock.innerHTML = html;
+        container.appendChild(compBlock);
+      });
+
+      if (visibleCompaniesCount === 0) {
+        container.innerHTML = '<div style="text-align:center; padding: 40px; color:#6b7280; font-weight:700;">لا توجد شركات مطابقة للبحث</div>';
+      }
+    }
+
+    // File Upload Handler
+    document.getElementById('htmlFileInput').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const content = evt.target.result;
+        allGroupedData = parseSalesHtml(content);
+        renderApp(allGroupedData);
+      };
+      reader.readAsText(file, 'UTF-8');
+    });
+
+    // Search Filter Handler
+    document.getElementById('searchInput').addEventListener('input', function(e) {
+      renderApp(allGroupedData, e.target.value);
+    });
+
+    // Initial Load with Demo Data
+    window.addEventListener('DOMContentLoaded', () => {
+      allGroupedData = parseSalesHtml(rawDemoHtml);
+      renderApp(allGroupedData);
+    });
+  </script>
+</body>
+</html>
