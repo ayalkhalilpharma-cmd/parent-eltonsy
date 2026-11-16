@@ -23,7 +23,7 @@
     }
 
     /* Force Western Arabic Numerals (123...) */
-    body, table, td, th, div, span {
+    body, table, td, th, div, span, input {
       font-feature-settings: "tnum" 1, "lnum" 1;
       font-variant-numeric: tabular-nums lining-nums;
     }
@@ -49,14 +49,31 @@
       border: 1px solid #e5e7eb;
     }
 
+    .header-title-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
     .header-title {
       font-size: 1.4rem;
       font-weight: 800;
       color: var(--primary);
-      margin-bottom: 16px;
       display: flex;
       align-items: center;
       gap: 10px;
+    }
+
+    .creator-tag {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #6b7280;
+      background: #f3f4f6;
+      padding: 4px 12px;
+      border-radius: 20px;
+      border: 1px solid #e5e7eb;
+      letter-spacing: 0.5px;
     }
 
     .controls-grid {
@@ -64,6 +81,7 @@
       grid-template-columns: 2fr 1fr 1fr;
       gap: 16px;
       align-items: center;
+      margin-bottom: 16px;
     }
 
     .file-uploader {
@@ -98,7 +116,7 @@
       font-size: 0.95rem;
     }
 
-    .search-box {
+    .search-box, .custom-header-input {
       width: 100%;
       padding: 10px 14px;
       border: 1px solid var(--border-color);
@@ -107,9 +125,26 @@
       outline: none;
     }
 
-    .search-box:focus {
+    .search-box:focus, .custom-header-input:focus {
       border-color: var(--accent);
       box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    }
+
+    .custom-header-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: #f8fafc;
+      padding: 12px 16px;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+    }
+
+    .custom-header-label {
+      font-weight: 700;
+      color: var(--primary);
+      white-space: nowrap;
+      font-size: 0.9rem;
     }
 
     .btn {
@@ -160,7 +195,7 @@
       padding: 20px;
       margin-bottom: 24px;
       box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-      page-break-inside: avoid; /* Prevents awkward splits in print */
+      page-break-inside: avoid;
       break-inside: avoid;
     }
 
@@ -173,10 +208,22 @@
       align-items: center;
     }
 
+    .company-title-area {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
     .company-name {
       font-size: 1.25rem;
       font-weight: 800;
       color: var(--primary);
+    }
+
+    .company-subhead {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #374151;
     }
 
     .company-meta {
@@ -184,7 +231,7 @@
       color: #6b7280;
     }
 
-    /* Table Styles matched to attached layout */
+    /* Table Styles */
     .data-table {
       width: 100%;
       border-collapse: collapse;
@@ -218,7 +265,6 @@
       font-weight: 800;
       background-color: #ffffff;
       border: 2px solid #000000 !important;
-      border-radius: 6px;
     }
 
     .net-summary-box {
@@ -235,11 +281,21 @@
       color: var(--primary);
     }
 
+    .print-footer {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: #4b5563;
+      margin-top: 10px;
+      padding-top: 6px;
+      border-top: 1px dashed #d1d5db;
+    }
+
     /* PRINT SPECIFIC STYLES FOR A4 */
     @media print {
       @page {
         size: A4 portrait;
-        margin: 12mm 10mm;
+        margin: 10mm 10mm;
       }
 
       body {
@@ -274,6 +330,10 @@
         color: #000000 !important;
       }
 
+      .company-subhead {
+        color: #000000 !important;
+      }
+
       .data-table th, 
       .data-table td {
         border-color: #000000 !important;
@@ -287,6 +347,11 @@
         color: #000000 !important;
         padding: 6px 12px !important;
       }
+
+      .print-footer {
+        border-top-color: #000000 !important;
+        color: #000000 !important;
+      }
     }
   </style>
 </head>
@@ -295,9 +360,13 @@
   <div class="app-container">
     <!-- Controls Section -->
     <div class="header-card no-print">
-      <div class="header-title">
-        <span>📊 نظام كشوفات شركات الآجل - تجميع وتقسيم الطباعة</span>
+      <div class="header-title-container">
+        <div class="header-title">
+          <span>📊 نظام كشوفات شركات الآجل - تجميع وتقسيم الطباعة</span>
+        </div>
+        <div class="creator-tag">Created by Mena Nazih</div>
       </div>
+
       <div class="controls-grid">
         <div class="file-uploader">
           <span class="file-uploader-text">📁 اضغط هنا لاختيار ملف HTM / HTML أو اسحبه هنا</span>
@@ -307,6 +376,11 @@
         <button class="btn btn-primary" onclick="window.print()">
           <span>🖨️ طباعة الكشوفات</span>
         </button>
+      </div>
+
+      <div class="custom-header-wrapper">
+        <span class="custom-header-label">عنوان بيان التقرير:</span>
+        <input type="text" id="customCompanyHeader" class="custom-header-input" value="الفواتير المفتوحة مع العملاء فرع :">
       </div>
     </div>
 
@@ -323,7 +397,7 @@
   </div>
 
   <script>
-    // Embedded sample HTML data from 14 nov.htm
+    // Sample HTML Data
     const rawDemoHtml = `<TABLE BORDER=1 WIDTH=671>
 <TR><TD WIDTH=44><TD WIDTH=77><TD WIDTH=22><TD WIDTH=44><TD WIDTH=22><TD WIDTH=77><TD WIDTH=22><TD WIDTH=66><TD WIDTH=22><TD WIDTH=55><TD WIDTH=33><TD WIDTH=33><TD WIDTH=33><TD WIDTH=33><TD WIDTH=33><TD WIDTH=22><TD WIDTH=33></TR>
 <TR><TH ALIGN=left COLSPAN=4>الخليل فارما لتجارة الأدوية</TH><TD></TD><TD></TD><TD></TD><TD></TD><TH COLSPAN=5 ROWSPAN=2>بيان بالفواتير المفتوحة مع العمـــلاء </TH><TD></TD><TD></TD><TD></TD><TD></TD></TR>
@@ -417,28 +491,40 @@
 
     let allGroupedData = {};
 
-    // Helper: Normalize company names to group variations under master company name
     function getMasterCompanyName(rawName) {
       if (!rawName) return 'غير محدد';
       const clean = rawName.trim();
       const upper = clean.toUpperCase();
 
+      // القائمة المحدثة بالكامل لدمج الشركات
       if (upper.includes('ALICO')) return 'ALICO';
       if (upper.includes('NEXTCARE')) return 'NEXTCARE';
       if (upper.includes('GLOBEMED')) return 'GLOBEMED';
       if (upper.includes('MED-RIGHT')) return 'MED-RIGHT';
       if (upper.includes('AXA')) return 'AXA';
       if (upper.includes('D.M.S.')) return 'D.M.S.';
+      if (upper.includes('CARE PLUS') || clean.includes('كير بلس')) return 'CARE PLUS';
+      if (upper.includes('TALABAT') || clean.includes('طلبات')) return 'Talabat';
+      if (upper.includes('ANRPC') || clean.includes('انربك')) return 'ANRPC';
       if (clean.includes('كاريتاس')) return 'كاريتاس';
       if (upper.includes('INSTASHOP')) return 'Instashop';
       if (clean.includes('عز الدخليه')) return 'عز الدخليه';
+      if (clean.includes('ابوقير للاسمدة') || clean.includes('أبو قير للأسمدة')) return 'أبوقير للأسمدة';
+      if (clean.includes('اسكندرية للبترول') || clean.includes('الإسكندرية للبترول')) return 'إسكندرية للبترول';
+      if (upper.includes('AMOC') || clean.includes('اموك') || clean.includes('الزيوت المعدنية')) return 'إسكندرية للزيوت المعدنية (أموك)';
+      if (clean.includes('البترو كيماويات') || clean.includes('البتروكيماويات')) return 'البتروكيماويات المصرية';
+      if (clean.includes('العامرية للتكرير')) return 'العامرية للتكرير';
+      if (upper.includes('ELAB') || clean.includes('ايلاب') || clean.includes('إيلاب')) return 'إيلاب';
       if (clean.includes('بترول الصحراء الغربية') || clean.includes('ويبكو')) return 'بترول الصحراء الغربية (ويبكو)';
+      if (clean.includes('بترومنت') || clean.includes('صيانة مصر')) return 'بترومنت (إسكندرية للصيانة)';
+      if (clean.includes('بنك فيصل')) return 'بنك فيصل الإسلامي';
+      if (clean.includes('سيدى كرير') || clean.includes('سيدي كرير') || upper.includes('SIDPEC') || clean.includes('سيدبك')) return 'سيدي كرير (سيدبك)';
+      if (clean.includes('مياه الشرب')) return 'مياه الشرب بالإسكندرية';
       
-      // Default: Return the base text before first numeric percentage if any
+      // الافتراضي: إزالة أي نسب مئوية أو كلمات زائدة في النهاية للدمج تلقائياً
       return clean.split(/\s+\d+%/)[0].trim();
     }
 
-    // Helper: Parse currency string to float
     function parseNum(str) {
       if (!str) return 0;
       const clean = str.replace(/,/g, '').trim();
@@ -446,7 +532,6 @@
       return isNaN(val) ? 0 : val;
     }
 
-    // Helper: Format number with Western Arabic numerals (1,234.56)
     function fmtNum(num) {
       return num.toLocaleString('en-US', {
         minimumFractionDigits: 2,
@@ -454,7 +539,6 @@
       });
     }
 
-    // Main HTML Parser Engine
     function parseSalesHtml(htmlContent) {
       const parser = new DOMParser();
       const doc = parser.parseFromString(htmlContent, 'text/html');
@@ -469,28 +553,21 @@
         const tds = Array.from(tr.children);
         if (tds.length < 6) return;
 
-        // Check if row has valid invoice date/number signature
         const typeText = tr.innerText || '';
         const isSale = typeText.includes('مبيعات لعميل');
         const isReturn = typeText.includes('مرتجع من عميل');
 
         if (!isSale && !isReturn) return;
 
-        // Extract cells standard SofTech format
-        let rawEntity = '', invNo = '', invDate = '', typeStr = '';
-        let totalVal = 0, paidVal = 0, remainVal = 0;
-
-        // Standard 7-8 visible cell structure
         const cellTexts = tds.map(td => td.innerText.trim()).filter(t => t.length > 0);
         
-        // Match columns safely from right to left
-        remainVal = parseNum(cellTexts[0]);
-        paidVal = parseNum(cellTexts[1]);
-        totalVal = parseNum(cellTexts[2]);
-        rawEntity = cellTexts[3] || '';
-        invNo = cellTexts[4] || '';
-        invDate = cellTexts[5] || '';
-        typeStr = isSale ? 'مبيعات لعميل' : 'مرتجع من عميل';
+        const remainVal = parseNum(cellTexts[0]);
+        const paidVal = parseNum(cellTexts[1]);
+        const totalVal = parseNum(cellTexts[2]);
+        const rawEntity = cellTexts[3] || '';
+        const invNo = cellTexts[4] || '';
+        const invDate = cellTexts[5] || '';
+        const typeStr = isSale ? 'مبيعات لعميل' : 'مرتجع من عميل';
 
         if (!rawEntity) return;
 
@@ -538,17 +615,17 @@
       return { companyMap, totalSales, totalReturns, totalInvCount };
     }
 
-    // Render UI & Print Layout
     function renderApp(parsedData, filterQuery = '') {
       const container = document.getElementById('companiesContainer');
       container.innerHTML = '';
+
+      const customHeaderText = document.getElementById('customCompanyHeader').value || '';
 
       const { companyMap, totalSales, totalReturns, totalInvCount } = parsedData;
       const keys = Object.keys(companyMap).sort();
 
       let visibleCompaniesCount = 0;
 
-      // Update Top Global Meta
       document.getElementById('totalCompaniesCount').innerText = keys.length;
       document.getElementById('totalInvoicesCount').innerText = totalInvCount;
       document.getElementById('totalSalesVal').innerText = fmtNum(totalSales);
@@ -569,7 +646,10 @@
 
         let html = `
           <div class="company-header">
-            <div class="company-name">${compName}</div>
+            <div class="company-title-area">
+              <div class="company-name">${compName}</div>
+              <div class="company-subhead">${customHeaderText}</div>
+            </div>
             <div class="company-meta">مبيعات: ${comp.sales.length} | مرتجعات: ${comp.returns.length}</div>
           </div>
           <table class="data-table">
@@ -587,7 +667,6 @@
             <tbody>
         `;
 
-        // Render Sales Rows
         comp.sales.forEach(row => {
           html += `
             <tr>
@@ -602,7 +681,6 @@
           `;
         });
 
-        // Sales Summary Row
         if (comp.sales.length > 0) {
           html += `
             <tr class="summary-row">
@@ -614,7 +692,6 @@
           `;
         }
 
-        // Render Return Rows
         comp.returns.forEach(row => {
           html += `
             <tr>
@@ -629,7 +706,6 @@
           `;
         });
 
-        // Return Summary Row
         if (comp.returns.length > 0) {
           html += `
             <tr class="summary-row">
@@ -648,6 +724,10 @@
             <span>صافي قيمة التعامل (المبيعات - المرتجعات): ${fmtNum(netVal)}</span>
             <span>صافي المتبقي للشركة: ${fmtNum(netRemain)}</span>
           </div>
+          <div class="print-footer">
+            <span>تقرير الشركات - ${compName}</span>
+            <span>Created by Mena Nazih</span>
+          </div>
         `;
 
         compBlock.innerHTML = html;
@@ -659,7 +739,6 @@
       }
     }
 
-    // File Upload Handler
     document.getElementById('htmlFileInput').addEventListener('change', function(e) {
       const file = e.target.files[0];
       if (!file) return;
@@ -668,17 +747,19 @@
       reader.onload = function(evt) {
         const content = evt.target.result;
         allGroupedData = parseSalesHtml(content);
-        renderApp(allGroupedData);
+        renderApp(allGroupedData, document.getElementById('searchInput').value);
       };
       reader.readAsText(file, 'UTF-8');
     });
 
-    // Search Filter Handler
     document.getElementById('searchInput').addEventListener('input', function(e) {
       renderApp(allGroupedData, e.target.value);
     });
 
-    // Initial Load with Demo Data
+    document.getElementById('customCompanyHeader').addEventListener('input', function() {
+      renderApp(allGroupedData, document.getElementById('searchInput').value);
+    });
+
     window.addEventListener('DOMContentLoaded', () => {
       allGroupedData = parseSalesHtml(rawDemoHtml);
       renderApp(allGroupedData);
